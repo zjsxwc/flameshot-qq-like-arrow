@@ -5,8 +5,8 @@
 #include <cmath>
 
 namespace {
-const int ArrowWidth = 10;
-const int ArrowHeight = 18;
+const int ArrowWidth = 25;
+const int ArrowHeight = 20;
 
 QPainterPath getArrowHead(QPoint p1, QPoint p2, const int thickness)
 {
@@ -23,6 +23,37 @@ QPainterPath getArrowHead(QPoint p1, QPoint p2, const int thickness)
 
     // Rotate base of the arrowhead
     base.setLength(ArrowWidth + thickness * 2);
+    base.setAngle(base.angle() + 90);
+    // Move to the correct point
+    QPointF temp2 = p1 - base.p2();
+    // Center it
+    QPointF centerTranslation((temp2.x() / 2), (temp2.y() / 2));
+
+    base.translate(bottomTranslation);
+    base.translate(centerTranslation);
+
+    QPainterPath path;
+    path.moveTo(p2);
+    path.lineTo(base.p1());
+    path.lineTo(base.p2());
+    path.lineTo(p2);
+    return path;
+    }
+
+QPainterPath getArrowHeadBack(QPoint p1, QPoint p2, const int thickness) {
+    QLineF base(p1, p2);
+    // Create the vector for the position of the base  of the arrowhead
+    QLineF temp(QPoint(0, 0), p2 - p1);
+    int val = base.length() - ArrowHeight + thickness * 4;
+    if (base.length() < (val - thickness * 2)) {
+        val = static_cast<int> (base.length() + thickness * 2);
+    }
+    temp.setLength(base.length() + thickness * 2 - val);
+    // Move across the line up to the head
+    QPointF bottomTranslation(temp.p2());
+
+    // Rotate base of the arrowhead
+    base.setLength(ArrowWidth * 0.5 + thickness * 2);
     base.setAngle(base.angle() + 90);
     // Move to the correct point
     QPointF temp2 = p1 - base.p2();
@@ -150,12 +181,16 @@ void ArrowTool::process(QPainter& painter, const QPixmap& pixmap)
 {
     Q_UNUSED(pixmap)
     painter.setPen(QPen(color(), size()));
-    painter.drawLine(getShorterLine(points().first, points().second, size()));
+    //    painter.drawLine(getShorterLine(points().first, points().second, size()));
     m_arrowPath = getArrowHead(points().first, points().second, size());
     painter.fillPath(m_arrowPath, QBrush(color()));
+
+    QPainterPath m_arrowBackPath = getArrowHeadBack(points().second, points().first, size());
+    painter.fillPath(m_arrowBackPath, QBrush(color()));
 }
 
 void ArrowTool::pressed(CaptureContext& context)
 {
     Q_UNUSED(context)
 }
+
